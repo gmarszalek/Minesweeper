@@ -1,6 +1,6 @@
 import { Cell } from "./Cell.js";
-
-class Game {
+import { UI } from "./UI.js";
+class Game extends UI {
   #config = {
     easy: {
       rows: 8,
@@ -23,8 +23,11 @@ class Game {
   #numberOfMines = null;
 
   #cells = [];
+  #cellsElements = null;
+  #board = null;
 
   initilizeGame() {
+    this.#handleElements();
     this.#newGame();
   }
   #newGame(rows = this.#config.easy.rows, cols = this.#config.easy.cols, mines = this.#config.easy.mines) {
@@ -32,8 +35,43 @@ class Game {
     this.#numberOfCols = cols;
     this.#numberOfMines = mines;
 
+    this.#setStyles();
     this.#generateCells();
+    this.#renderBoard();
+
+    this.#cellsElements = this.getElements(this.UiSelectors.cell);
+
+    this.#addCellsEventListeners();
   }
+
+  #handleElements() {
+    this.#board = this.getElement(this.UiSelectors.board);
+  }
+
+  #addCellsEventListeners() {
+    this.#cellsElements.forEach((element) => {
+      element.addEventListener("click", this.#handleCellClick);
+      element.addEventListener("contextmenu", this.#handleCellContextMenu);
+    });
+  }
+  #handleCellClick = (e) => {
+    const targer = e.target;
+    const rowIndex = parseInt(targer.getAttribute("data-y"), 10);
+    const colIndex = parseInt(targer.getAttribute("data-x"), 10);
+
+    this.#cells[rowIndex][colIndex].revealCell();
+  };
+
+  #handleCellContextMenu = (e) => {
+    e.preventDefault();
+    const targer = e.target;
+    const rowIndex = parseInt(targer.getAttribute("data-y"), 10);
+    const colIndex = parseInt(targer.getAttribute("data-x"), 10);
+
+    const cell = this.#cells[rowIndex][colIndex];
+    if (cell.isReveal) return;
+    cell.toggleFlag();
+  };
 
   #generateCells() {
     for (let row = 0; row < this.#numberOfRows; row++) {
@@ -42,6 +80,15 @@ class Game {
         this.#cells[row].push(new Cell(col, row));
       }
     }
+  }
+  #renderBoard() {
+    this.#cells.flat().forEach((cell) => {
+      this.#board.insertAdjacentHTML("beforeend", cell.createElement());
+      cell.element = cell.getElement(cell.selector);
+    });
+  }
+  #setStyles() {
+    document.documentElement.style.setProperty("--cells-in-row", this.#numberOfCols);
   }
 }
 
