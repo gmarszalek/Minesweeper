@@ -1,5 +1,7 @@
 import { Cell } from "./Cell.js";
 import { UI } from "./UI.js";
+import { Counter } from "./Counter.js";
+import { Timer } from "./Timer.js";
 class Game extends UI {
   #config = {
     easy: {
@@ -18,6 +20,9 @@ class Game extends UI {
       mines: 99,
     },
   };
+  #counter = new Counter();
+  #timer = new Timer();
+
   #numberOfRows = null;
   #numberOfCols = null;
   #numberOfMines = null;
@@ -28,12 +33,17 @@ class Game extends UI {
 
   initilizeGame() {
     this.#handleElements();
+    this.#counter.init();
+    this.#timer.init();
     this.#newGame();
   }
   #newGame(rows = this.#config.easy.rows, cols = this.#config.easy.cols, mines = this.#config.easy.mines) {
     this.#numberOfRows = rows;
     this.#numberOfCols = cols;
     this.#numberOfMines = mines;
+
+    this.#counter.setValue(this.#numberOfMines);
+    this.#timer.startTimer();
 
     this.#setStyles();
     this.#generateCells();
@@ -70,7 +80,15 @@ class Game extends UI {
 
     const cell = this.#cells[rowIndex][colIndex];
     if (cell.isReveal) return;
-    cell.toggleFlag();
+    if (cell.isFlagged) {
+      this.#counter.increment();
+      cell.toggleFlag();
+      return;
+    }
+    if (!!this.#counter.value) {
+      cell.toggleFlag();
+      this.#counter.decrement();
+    }
   };
 
   #generateCells() {
